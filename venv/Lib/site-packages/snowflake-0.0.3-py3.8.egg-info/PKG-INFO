@@ -1,0 +1,18 @@
+Metadata-Version: 1.1
+Name: snowflake
+Version: 0.0.3
+Summary: Simple persistent unique IDs.
+Home-page: https://github.com/shaddi/snowflake
+Author: Shaddi Hasan
+Author-email: shaddih@gmail.com
+License: bsd
+Description: UNKNOWN
+Keywords: unique id uuid persistent identification
+Platform: UNKNOWN
+Classifier: Operating System :: POSIX
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities

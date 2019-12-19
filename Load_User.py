@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+import snowflake.connector
+import json
+
+con = snowflake.connector.connect(
+    user='user',
+    password='password',
+    account='trustpower.australia-east.azure',
+    role='SYSADMIN',
+    warehouse='DM_ELT',
+    database='SRC_LOAD',
+    schema='LITMOS',
+)
+
+json_dir = 'file:///home/attunity/airflow/LitmosAPI/files/'
+object = 'user'
+object_db = 'LITMOS.USER_DETAIL'
+
+cursor = con.cursor()
+con.cursor().execute('create or replace file format myjsonformat_' + object + ' type="JSON" strip_outer_array=true;')
+con.cursor().execute('create or replace stage my_json_stage_' + object + ' file_format=myjsonformat_' + object + ';')
+
+con.cursor().execute('put ' + json_dir + object + '* @my_json_stage_' + object + ' auto_compress=true;')
+
+con.cursor().execute('truncate table ' + object_db)
+table_list = cursor.execute('COPY INTO LITMOS.USER_DETAIL '
+                            '(USER_ID'
+                            ',USER_NAME'
+                            ',FIRST_NAME'
+                            ',LAST_NAME'
+                            ',FULL_NAME'
+                            ',EMAIL'
+                            ',ACCESS_LEVEL'
+                            ',DISABLE_MESSAGES'
+                            ',ACTIVE'
+                            ',SKYPE'
+                            ',PHONE_WORK'
+                            ',PHONE_MOBILE'
+                            ',LAST_LOGIN_RAW'
+                            ',LAST_LOGIN'
+                            ',LOGIN_KEY'
+                            ',IS_CUSTOM_USERNAME'
+                            ',PASSWORD'
+                            ',SKIP_FIRST_LOGIN'
+                            ',TIME_ZONE'
+                            ',SALESFORCE_ID'
+                            ',ORIGINAL_ID'
+                            ',STREET1'
+                            ',STREET2'
+                            ',CITY'
+                            ',STATE'
+                            ',POSTAL_CODE'
+                            ',COUNTRY'
+                            ',COMPANY_NAME'
+                            ',JOB_TITLE'
+                            ',CUSTOM_FIELD1'
+                            ',CUSTOM_FIELD2'
+                            ',CUSTOM_FIELD3'
+                            ',CULTURE'
+                            ',CUSTOM_FIELD4'
+                            ',CUSTOM_FIELD5'
+                            ',CUSTOM_FIELD6'
+                            ',CUSTOM_FIELD7'
+                            ',CUSTOM_FIELD8'
+                            ',CUSTOM_FIELD9'
+                            ',CUSTOM_FIELD10'
+                            ',SALESFORCE_CONTACT_ID'
+                            ',SALESFORCE_ACCOUNT_ID'
+                            ',CREATED_DATE_RAW'
+                            ',CREATED_DATE'
+                            ',POINTS'
+                            ',BRAND'
+                            ',MANAGER_ID'
+                            ',MANAGER_NAME'
+                            ',ENABLE_TEXT_NOTIFICATION'
+                            ',WEBSITE'
+                            ',TWITTER'
+                            ',EXPIRATION_DATE_RAW'
+                            ',EXPIRATION_DATE'
+                            ',JOB_ROLE'
+                            ',LOAD_DATETIME)'
+                            'FROM (SELECT '
+                                'PARSE_JSON($1):"Id"'
+                                ',PARSE_JSON($1):"UserName"'
+                                ',PARSE_JSON($1):"FirstName"'
+                                ',PARSE_JSON($1):"LastName"'
+                                ',PARSE_JSON($1):"FullName"'
+                                ',PARSE_JSON($1):"Email"'
+                                ',PARSE_JSON($1):"AccessLevel"'
+                                ',PARSE_JSON($1):"DisableMessages"'
+                                ',PARSE_JSON($1):"Active"'
+                                ',PARSE_JSON($1):"Skype"'
+                                ',PARSE_JSON($1):"PhoneWork"'
+                                ',PARSE_JSON($1):"PhoneMobile"'
+                                ',PARSE_JSON($1):"LastLogin"'
+                                ',TO_TIMESTAMP_NTZ(NULLIF(PARSE_JSON($1):"LastLogin", \'\'))'
+                                ',PARSE_JSON($1):"LoginKey"'
+                                ',PARSE_JSON($1):"IsCustomUsername"'
+                                ',PARSE_JSON($1):"Password"'
+                                ',PARSE_JSON($1):"SkipFirstLogin"'
+                                ',PARSE_JSON($1):"TimeZone"'
+                                ',PARSE_JSON($1):"SalesforceId"'
+                                ',PARSE_JSON($1):"OriginalId"'
+                                ',PARSE_JSON($1):"Street1"'
+                                ',PARSE_JSON($1):"Street2"'
+                                ',PARSE_JSON($1):"City"'
+                                ',PARSE_JSON($1):"State"'
+                                ',PARSE_JSON($1):"PostalCode"'
+                                ',PARSE_JSON($1):"Country"'
+                                ',PARSE_JSON($1):"CompanyName"'
+                                ',PARSE_JSON($1):"JobTitle"'
+                                ',PARSE_JSON($1):"CustomField1"'
+                                ',PARSE_JSON($1):"CustomField2"'
+                                ',PARSE_JSON($1):"CustomField3"'
+                                ',PARSE_JSON($1):"Culture"'
+                                ',PARSE_JSON($1):"CustomField4"'
+                                ',PARSE_JSON($1):"CustomField5"'
+                                ',PARSE_JSON($1):"CustomField6"'
+                                ',PARSE_JSON($1):"CustomField7"'
+                                ',PARSE_JSON($1):"CustomField8"'
+                                ',PARSE_JSON($1):"CustomField9"'
+                                ',PARSE_JSON($1):"CustomField10"'
+                                ',PARSE_JSON($1):"SalesforceContactId"'
+                                ',PARSE_JSON($1):"SalesforceAccountId"'
+                                ',PARSE_JSON($1):"CreatedDate"'
+                                ',TO_TIMESTAMP_NTZ(NULLIF(PARSE_JSON($1):"CreatedDate", \'\'))'
+                                ',PARSE_JSON($1):"Points"'
+                                ',PARSE_JSON($1):"Brand"'
+                                ',PARSE_JSON($1):"ManagerId"'
+                                ',PARSE_JSON($1):"ManagerName"'
+                                ',PARSE_JSON($1):"EnableTextNotification"'
+                                ',PARSE_JSON($1):"Website"'
+                                ',PARSE_JSON($1):"Twitter"'
+                                ',PARSE_JSON($1):"ExpirationDate"'
+                                ',TO_TIMESTAMP_NTZ(NULLIF(PARSE_JSON($1):"ExpirationDate", \'\'))'
+                                ',PARSE_JSON($1):"JobRole"'
+                                ',TO_TIMESTAMP(CURRENT_TIMESTAMP(9))'
+                            'FROM @my_json_stage_' + object + '/' + object + '.json.gz)').fetchall()
+
+print(table_list)
+
+con.cursor().execute('REMOVE @my_json_stage_' + object + ' ;')
